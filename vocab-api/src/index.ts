@@ -1,11 +1,29 @@
 import express from 'express';
 import cors from 'cors';
-import { errorHandler } from './middleware/errorHandler';
-import authRoutes from './routes/auth.routes';
-import storiesRoutes from './routes/stories.routes';
-import vocabularyRoutes from './routes/vocabulary.routes';
 
 const app = express();
+
+// Log startup
+console.log('Starting app initialization...');
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
+
+// Lazy import routes to avoid crashes during module load
+let authRoutes: any;
+let storiesRoutes: any;
+let vocabularyRoutes: any;
+let errorHandler: any;
+
+try {
+  errorHandler = require('./middleware/errorHandler').errorHandler;
+  authRoutes = require('./routes/auth.routes').default;
+  storiesRoutes = require('./routes/stories.routes').default;
+  vocabularyRoutes = require('./routes/vocabulary.routes').default;
+  console.log('All routes loaded successfully');
+} catch (error) {
+  console.error('Failed to load routes:', error);
+}
 
 // CORS must be first - allow all origins for now to debug
 const corsOptions = {
@@ -30,10 +48,10 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Routes
-app.use('/auth', authRoutes);
-app.use('/stories', storiesRoutes);
-app.use('/vocabulary', vocabularyRoutes);
+// Routes (only if loaded successfully)
+if (authRoutes) app.use('/auth', authRoutes);
+if (storiesRoutes) app.use('/stories', storiesRoutes);
+if (vocabularyRoutes) app.use('/vocabulary', vocabularyRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -44,7 +62,7 @@ app.use((_req, res) => {
 });
 
 // Error handling middleware (must be last)
-app.use(errorHandler);
+if (errorHandler) app.use(errorHandler);
 
 // Only start server if not in serverless environment (Vercel)
 if (process.env.VERCEL !== '1') {
