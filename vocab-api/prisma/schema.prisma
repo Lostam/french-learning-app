@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  passwordHash   String
+  nativeLanguage String           @default("he")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  stories        Story[]
+  vocabularyWords VocabularyWord[]
+  reviewCards    ReviewCard[]
+  reviewLogs     ReviewLog[]
+
+  @@map("users")
+}
+
+model Story {
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  content         String   @db.Text
+  language        String
+  source          StorySource
+  difficultyLevel String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentences       Sentence[]
+  vocabularyWords VocabularyWord[]
+
+  @@index([userId])
+  @@map("stories")
+}
+
+enum StorySource {
+  USER_ADDED
+  AI_GENERATED
+}
+
+model Sentence {
+  id              String   @id @default(cuid())
+  storyId         String
+  text            String   @db.Text
+  position        Int
+  createdAt       DateTime @default(now())
+
+  story           Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  vocabularyWords VocabularyWord[]
+
+  @@index([storyId])
+  @@map("sentences")
+}
+
+model VocabularyWord {
+  id           String   @id @default(cuid())
+  userId       String
+  storyId      String
+  sentenceId   String
+  word         String
+  definition   String   @db.Text
+  translation  String
+  contextNote  String?  @db.Text
+  partOfSpeech String?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story        Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sentence     Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  reviewCard   ReviewCard?
+
+  @@index([userId])
+  @@index([storyId])
+  @@index([sentenceId])
+  @@map("vocabulary_words")
+}
+
+model ReviewCard {
+  id               String   @id @default(cuid())
+  userId           String
+  vocabularyWordId String   @unique
+  easeFactor       Float    @default(2.5)
+  intervalDays     Int      @default(0)
+  repetitions      Int      @default(0)
+  nextReviewAt     DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyWord   VocabularyWord @relation(fields: [vocabularyWordId], references: [id], onDelete: Cascade)
+  reviewLogs       ReviewLog[]
+
+  @@index([userId])
+  @@index([nextReviewAt])
+  @@map("review_cards")
+}
+
+model ReviewLog {
+  id           String   @id @default(cuid())
+  userId       String
+  reviewCardId String
+  quality      Int
+  reviewedAt   DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewCard   ReviewCard @relation(fields: [reviewCardId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([reviewCardId])
+  @@map("review_logs")
+}
