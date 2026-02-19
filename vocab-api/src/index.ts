@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction, Router } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 
 const app = express();
@@ -16,43 +16,44 @@ app.get('/health', (_req: Request, res: Response) => {
   }});
 });
 
-// Cache for loaded routes
-const routeCache: { [key: string]: Router } = {};
+// Import routes (require to avoid hoisting issues in error handling)
+try {
+  const authRoutes = require('./routes/auth.routes').default;
+  const storiesRoutes = require('./routes/stories.routes').default;
+  const vocabularyRoutes = require('./routes/vocabulary.routes').default;
+  const { errorHandler } = require('./middleware/errorHandler');
 
-// Helper to lazily load routes
-const lazyRoute = (routePath: string) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!routeCache[routePath]) {
-        const module = await import(routePath);
-        routeCache[routePath] = module.default;
-      }
-      routeCache[routePath](req, res, next);
-    } catch (error: any) {
-      console.error(`Failed to load route ${routePath}:`, error);
-      res.status(500).json({
-        error: 'Route loading failed',
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
-  };
-};
+  // Routes
+  app.use('/auth', authRoutes);
+  app.use('/stories', storiesRoutes);
+  app.use('/vocabulary', vocabularyRoutes);
 
-// Routes with lazy loading
-app.use('/auth', lazyRoute('./routes/auth.routes'));
-app.use('/stories', lazyRoute('./routes/stories.routes'));
-app.use('/vocabulary', lazyRoute('./routes/vocabulary.routes'));
+  // Error handler
+  app.use(errorHandler);
+} catch (error: any) {
+  console.error('Failed to load routes:', error);
+
+  // Fallback error route
+  app.use('/auth', (_req: Request, res: Response) => {
+    res.status(500).json({ error: 'Auth routes failed to load', message: error.message });
+  });
+  app.use('/stories', (_req: Request, res: Response) => {
+    res.status(500).json({ error: 'Stories routes failed to load', message: error.message });
+  });
+  app.use('/vocabulary', (_req: Request, res: Response) => {
+    res.status(500).json({ error: 'Vocabulary routes failed to load', message: error.message });
+  });
+}
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
-// Generic error handler
+// Generic error handler (fallback)
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.statusCode || 500).json({
+  console.error('Unhandled error:', err);
+  res.status(500).json({
     status: 'error',
     message: err.message || 'Internal server error',
   });
