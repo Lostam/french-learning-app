@@ -1,11 +1,18 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
-import { env } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
 
 const SALT_ROUNDS = 10;
 const JWT_EXPIRES_IN = '7d';
+
+const getJwtSecret = () => {
+  const secret = process.getJwtSecret();
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
+  }
+  return secret;
+};
 
 export interface JWTPayload {
   userId: string;
@@ -42,7 +49,7 @@ export class AuthService {
    * Generate a JWT token with userId and email
    */
   static generateToken(payload: JWTPayload): string {
-    return jwt.sign(payload, env.JWT_SECRET, {
+    return jwt.sign(payload, getJwtSecret(), {
       expiresIn: JWT_EXPIRES_IN,
     });
   }
@@ -52,7 +59,7 @@ export class AuthService {
    */
   static verifyToken(token: string): JWTPayload {
     try {
-      return jwt.verify(token, env.JWT_SECRET) as JWTPayload;
+      return jwt.verify(token, getJwtSecret()) as JWTPayload;
     } catch (error) {
       throw new AppError('Invalid or expired token', 401);
     }

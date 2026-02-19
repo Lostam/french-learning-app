@@ -1,20 +1,25 @@
 import express from 'express';
 import cors from 'cors';
 import { errorHandler } from './middleware/errorHandler';
-import { env } from './config/env';
 import authRoutes from './routes/auth.routes';
 import storiesRoutes from './routes/stories.routes';
 import vocabularyRoutes from './routes/vocabulary.routes';
 
 const app = express();
-const PORT = env.PORT;
 
-// Middleware
-app.use(express.json());
-app.use(cors({
-  origin: env.CORS_ORIGIN,
+// CORS must be first - allow all origins for now to debug
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight
+
+// Other middleware
+app.use(express.json());
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
@@ -43,6 +48,7 @@ app.use(errorHandler);
 
 // Only start server if not in serverless environment (Vercel)
 if (process.env.VERCEL !== '1') {
+  const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Health check available at http://localhost:${PORT}/health`);

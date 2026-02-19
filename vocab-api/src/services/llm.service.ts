@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { env } from '../config/env';
 
-const anthropic = new Anthropic({
-  apiKey: env.ANTHROPIC_API_KEY,
-});
+const getAnthropicClient = () => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not configured');
+  }
+  return new Anthropic({ apiKey });
+};
 
 export interface ContextualDefinitionRequest {
   word: string;
@@ -54,7 +57,8 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
 }`;
 
       // Call Claude Haiku for fast, cost-efficient response
-      const message = await anthropic.messages.create({
+      const client = getAnthropicClient();
+      const message = await client.messages.create({
         model: 'claude-3-5-haiku-20241022',
         max_tokens: 512,
         messages: [

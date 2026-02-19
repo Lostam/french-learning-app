@@ -22,7 +22,8 @@ const parseEnv = () => {
       issues.forEach((err: any) => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`);
       });
-      process.exit(1);
+      // Don't exit in serverless - throw instead
+      throw new Error('Environment validation failed: ' + issues.map((e: any) => e.path.join('.')).join(', '));
     }
     throw error;
   }
