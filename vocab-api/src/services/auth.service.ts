@@ -7,7 +7,7 @@ const SALT_ROUNDS = 10;
 const JWT_EXPIRES_IN = '7d';
 
 const getJwtSecret = () => {
-  const secret = process.getJwtSecret();
+  const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error('JWT_SECRET must be at least 32 characters');
   }
