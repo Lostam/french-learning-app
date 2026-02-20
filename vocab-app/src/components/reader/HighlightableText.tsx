@@ -48,15 +48,15 @@ export const HighlightableText = memo(function HighlightableText({
             key={index}
             onClick={() => onWordClick(wordObj.normalized, sentenceId)}
             className={`
-              inline-block cursor-pointer transition-all duration-200
-              hover:bg-blue-50 active:bg-blue-100 rounded-sm
-              min-h-[44px] min-w-[44px] py-1 px-0.5
+              inline cursor-pointer transition-all duration-200
+              hover:bg-blue-50 active:bg-blue-100 rounded-sm px-0.5
               ${isSaved ? 'border-b-2 border-blue-500 font-medium text-blue-700' : ''}
             `}
             style={{
-              // Ensure minimum tap target of 44px
+              // Ensure minimum tap target of 44px with padding
               paddingTop: '0.5rem',
               paddingBottom: '0.5rem',
+              display: 'inline',
             }}
           >
             {wordObj.original}
