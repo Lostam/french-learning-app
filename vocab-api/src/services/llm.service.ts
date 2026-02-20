@@ -59,7 +59,7 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
       // Call Claude Haiku for fast, cost-efficient response
       const client = getAnthropicClient();
       const message = await client.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-3-5-haiku-latest',
         max_tokens: 512,
         messages: [
           {
