@@ -135,15 +135,109 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
 
   /**
    * Generate a story using Claude Sonnet
-   * (Placeholder for future implementation)
    */
-  static async generateStory(_params: {
+  static async generateStory(params: {
     topic: string;
     difficulty: string;
     length: string;
     language: string;
   }): Promise<{ title: string; content: string }> {
-    // TODO: Implement story generation with Claude Sonnet
-    throw new Error('Story generation not yet implemented');
+    try {
+      const { topic, difficulty, length, language } = params;
+
+      // Map length to approximate word counts
+      const lengthMap: Record<string, string> = {
+        short: '150-250 words',
+        medium: '300-500 words',
+        long: '600-900 words',
+      };
+      const wordCount = lengthMap[length] || lengthMap.medium;
+
+      // Map difficulty to language complexity guidance
+      const difficultyMap: Record<string, string> = {
+        beginner: 'Use simple vocabulary, short sentences, present tense, and common everyday words. Avoid idioms and complex grammar.',
+        intermediate: 'Use moderate vocabulary, varied sentence structures, and some idiomatic expressions. Include past and future tenses.',
+        advanced: 'Use rich vocabulary, complex sentences, idioms, and varied tenses. Include nuanced expressions and literary devices.',
+      };
+      const complexityGuidance = difficultyMap[difficulty] || difficultyMap.intermediate;
+
+      const prompt = `You are a language learning content creator. Generate an engaging story in ${language} for language learners.
+
+Topic: ${topic}
+Target length: ${wordCount}
+Difficulty level: ${difficulty}
+
+Language complexity guidance:
+${complexityGuidance}
+
+Requirements:
+1. The story should be interesting and engaging
+2. Use natural, authentic ${language} language
+3. Include dialogue where appropriate
+4. The story should have a clear beginning, middle, and end
+5. Make the content culturally appropriate and educational
+
+Respond with ONLY a JSON object in this exact format (no markdown, no code blocks):
+{
+  "title": "Story title in ${language}",
+  "content": "The full story text in ${language}"
+}`;
+
+      const client = getAnthropicClient();
+      const message = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      const content = message.content[0];
+      if (content.type !== 'text') {
+        throw new Error('Unexpected response type from Claude API');
+      }
+
+      const responseText = content.text.trim();
+      const parsed = this.parseStoryResponse(responseText);
+
+      return parsed;
+    } catch (error) {
+      console.error('Story Generation Error:', error);
+
+      if (error instanceof Error) {
+        throw new Error(`Failed to generate story: ${error.message}`);
+      }
+      throw new Error('Failed to generate story: Unknown error');
+    }
+  }
+
+  /**
+   * Parse and validate story generation response from Claude
+   */
+  private static parseStoryResponse(responseText: string): { title: string; content: string } {
+    try {
+      const parsed = JSON.parse(responseText);
+
+      if (typeof parsed.title !== 'string' || typeof parsed.content !== 'string') {
+        throw new Error('Response missing required fields or fields have wrong type');
+      }
+
+      if (!parsed.title.trim() || !parsed.content.trim()) {
+        throw new Error('Response contains empty required fields');
+      }
+
+      return {
+        title: parsed.title.trim(),
+        content: parsed.content.trim(),
+      };
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error('Claude API returned invalid JSON');
+      }
+      throw error;
+    }
   }
 }

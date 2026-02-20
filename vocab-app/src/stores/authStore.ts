@@ -87,6 +87,17 @@ export const useAuthStore = create<AuthState>((set) => ({
           localStorage.removeItem('user');
         }
       }
+
+      // Listen for auth:logout event from API interceptor
+      const handleAuthLogout = () => {
+        set({ token: null, user: null, isAuthenticated: false });
+      };
+      window.addEventListener('auth:logout', handleAuthLogout);
+
+      // Cleanup listener
+      return () => {
+        window.removeEventListener('auth:logout', handleAuthLogout);
+      };
     }
   },
 }));

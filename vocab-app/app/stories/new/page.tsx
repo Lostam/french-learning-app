@@ -13,8 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 import StoryForm from '@/src/components/stories/StoryForm';
+import apiClient from '@/src/lib/api';
 
 const LANGUAGES = [
   { value: 'fr', label: 'French 🇫🇷' },
@@ -36,6 +37,8 @@ export default function NewStoryPage() {
   const [aiLanguage, setAiLanguage] = useState('');
   const [aiDifficulty, setAiDifficulty] = useState('');
   const [aiLength, setAiLength] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
     initAuth();
@@ -55,10 +58,48 @@ export default function NewStoryPage() {
     router.push(`/stories/${storyId}`);
   };
 
-  const handleGenerateAI = (e: React.FormEvent) => {
+  const handleGenerateAI = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder for AI generation - will be implemented later
-    alert('AI story generation coming soon!');
+
+    // Validation
+    if (!aiTopic.trim()) {
+      setAiError('Topic is required');
+      return;
+    }
+    if (!aiLanguage) {
+      setAiError('Language is required');
+      return;
+    }
+    if (!aiDifficulty) {
+      setAiError('Difficulty is required');
+      return;
+    }
+    if (!aiLength) {
+      setAiError('Story length is required');
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      setAiError(null);
+
+      const response = await apiClient.post('/stories/generate', {
+        topic: aiTopic.trim(),
+        language: aiLanguage,
+        difficulty: aiDifficulty,
+        length: aiLength,
+      });
+
+      const storyId = response.data.data.story.id;
+      router.push(`/stories/${storyId}`);
+    } catch (err: any) {
+      console.error('Error generating story:', err);
+      setAiError(
+        err.response?.data?.message || 'Failed to generate story. Please try again.'
+      );
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -95,6 +136,12 @@ export default function NewStoryPage() {
           <TabsContent value="generate" className="mt-0">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <form onSubmit={handleGenerateAI} className="space-y-4">
+                {aiError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                    {aiError}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label htmlFor="topic" className="text-sm font-medium text-gray-700">
                     Topic
@@ -105,6 +152,7 @@ export default function NewStoryPage() {
                     placeholder="e.g., A day at the beach, A visit to Paris..."
                     value={aiTopic}
                     onChange={(e) => setAiTopic(e.target.value)}
+                    disabled={aiLoading}
                     className="w-full"
                   />
                 </div>
@@ -113,7 +161,7 @@ export default function NewStoryPage() {
                   <label htmlFor="ai-language" className="text-sm font-medium text-gray-700">
                     Language
                   </label>
-                  <Select value={aiLanguage} onValueChange={setAiLanguage}>
+                  <Select value={aiLanguage} onValueChange={setAiLanguage} disabled={aiLoading}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a language" />
                     </SelectTrigger>
@@ -131,7 +179,7 @@ export default function NewStoryPage() {
                   <label htmlFor="difficulty" className="text-sm font-medium text-gray-700">
                     Difficulty Level
                   </label>
-                  <Select value={aiDifficulty} onValueChange={setAiDifficulty}>
+                  <Select value={aiDifficulty} onValueChange={setAiDifficulty} disabled={aiLoading}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -152,7 +200,7 @@ export default function NewStoryPage() {
                   <label htmlFor="length" className="text-sm font-medium text-gray-700">
                     Story Length
                   </label>
-                  <Select value={aiLength} onValueChange={setAiLength}>
+                  <Select value={aiLength} onValueChange={setAiLength} disabled={aiLoading}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select length" />
                     </SelectTrigger>
@@ -166,21 +214,27 @@ export default function NewStoryPage() {
                   </Select>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mt-6">
-                  <p className="text-sm text-blue-800">
-                    <strong>Coming Soon:</strong> AI-powered story generation will
-                    be available in a future update. For now, use the "Paste Text"
-                    tab to add your own stories.
-                  </p>
-                </div>
-
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled
+                  disabled={aiLoading || !aiTopic.trim() || !aiLanguage || !aiDifficulty || !aiLength}
                 >
-                  Generate Story (Coming Soon)
+                  {aiLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Story...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Story
+                    </>
+                  )}
                 </Button>
+
+                <p className="text-xs text-gray-500 text-center">
+                  AI will generate a story based on your topic and preferences
+                </p>
               </form>
             </div>
           </TabsContent>

@@ -30,11 +30,20 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth on 401
+      // Clear auth on 401 only if we're in the browser
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+
+        // Use dynamic import to avoid circular dependency with useAuthStore
+        // Dispatch custom event so the store can handle logout
+        const event = new CustomEvent('auth:logout');
+        window.dispatchEvent(event);
+
+        // Redirect to login after a short delay to allow event processing
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
       }
     }
     return Promise.reject(error);
