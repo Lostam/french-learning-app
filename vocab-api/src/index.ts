@@ -50,12 +50,14 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ status: 'error', message: 'Route not found' });
 });
 
-// Generic error handler (fallback)
+// Generic error handler (fallback) - show full error details
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({
+  res.status(err.statusCode || 500).json({
     status: 'error',
     message: err.message || 'Internal server error',
+    error: err.toString(),
+    stack: err.stack,
   });
 });
 

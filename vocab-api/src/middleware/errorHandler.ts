@@ -30,6 +30,8 @@ export const errorHandler = (
 
   return res.status(500).json({
     status: 'error',
-    message: 'Internal server error',
+    message: err.message || 'Internal server error',
+    error: err.toString(),
+    stack: err.stack,
   });
 };
