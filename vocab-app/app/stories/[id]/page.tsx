@@ -37,7 +37,7 @@ interface VocabularyWord {
 }
 
 export default function StoryReaderPage() {
-  const { isAuthenticated, initAuth } = useAuthStore();
+  const { isAuthenticated, isInitialized, initAuth } = useAuthStore();
   const router = useRouter();
   const params = useParams();
   const storyId = params.id as string;
@@ -52,10 +52,10 @@ export default function StoryReaderPage() {
   }, [initAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   useEffect(() => {
     const fetchData = async () => {

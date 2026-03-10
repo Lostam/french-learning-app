@@ -19,7 +19,7 @@ interface Story {
 }
 
 export default function StoriesPage() {
-  const { isAuthenticated, initAuth } = useAuthStore();
+  const { isAuthenticated, isInitialized, initAuth } = useAuthStore();
   const router = useRouter();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,10 +30,10 @@ export default function StoriesPage() {
   }, [initAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   useEffect(() => {
     const fetchStories = async () => {

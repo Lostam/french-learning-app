@@ -22,6 +22,7 @@ interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   setToken: (token: string, user: User) => void;
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
@@ -33,6 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
   isAuthenticated: false,
+  isInitialized: false,
 
   setToken: (token: string, user: User) => {
     if (typeof window !== 'undefined') {
@@ -80,12 +82,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (token && userStr) {
         try {
           const user = JSON.parse(userStr);
-          set({ token, user, isAuthenticated: true });
+          set({ token, user, isAuthenticated: true, isInitialized: true });
         } catch (error) {
           console.error('Failed to parse user from localStorage', error);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          set({ isInitialized: true });
         }
+      } else {
+        set({ isInitialized: true });
       }
 
       // Listen for auth:logout event from API interceptor

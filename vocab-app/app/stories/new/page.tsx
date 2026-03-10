@@ -28,7 +28,7 @@ const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced'];
 const LENGTHS = ['Short', 'Medium', 'Long'];
 
 export default function NewStoryPage() {
-  const { isAuthenticated, initAuth } = useAuthStore();
+  const { isAuthenticated, isInitialized, initAuth } = useAuthStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('paste');
 
@@ -45,10 +45,10 @@ export default function NewStoryPage() {
   }, [initAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   if (!isAuthenticated) {
     return null;

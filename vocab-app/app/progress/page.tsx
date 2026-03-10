@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import BottomNav from '@/src/components/layout/BottomNav';
 
 export default function ProgressPage() {
-  const { isAuthenticated, initAuth, user } = useAuthStore();
+  const { isAuthenticated, isInitialized, initAuth, user } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -14,10 +14,10 @@ export default function ProgressPage() {
   }, [initAuth]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isInitialized && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   if (!isAuthenticated) {
     return null;
