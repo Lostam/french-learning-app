@@ -26,6 +26,15 @@ export interface ContextualDefinitionResponse {
  */
 export class LLMService {
   /**
+   * Strip markdown code fences (```json ... ```) from LLM responses
+   */
+  private static stripCodeFences(text: string): string {
+    const fenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
+    const match = text.match(fenceRegex);
+    return match ? match[1].trim() : text;
+  }
+
+  /**
    * Get contextual definition for a word within a sentence
    * Uses Claude Haiku for cost efficiency
    */
@@ -97,8 +106,10 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
    */
   private static parseAndValidateResponse(responseText: string): ContextualDefinitionResponse {
     try {
+      // Strip markdown code fences if present
+      const cleanedText = this.stripCodeFences(responseText);
       // Try to parse as JSON
-      const parsed = JSON.parse(responseText);
+      const parsed = JSON.parse(cleanedText);
 
       // Validate required fields
       if (
@@ -219,7 +230,8 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
    */
   private static parseStoryResponse(responseText: string): { title: string; content: string } {
     try {
-      const parsed = JSON.parse(responseText);
+      const cleanedText = this.stripCodeFences(responseText);
+      const parsed = JSON.parse(cleanedText);
 
       if (typeof parsed.title !== 'string' || typeof parsed.content !== 'string') {
         throw new Error('Response missing required fields or fields have wrong type');
