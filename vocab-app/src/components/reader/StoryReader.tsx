@@ -109,19 +109,15 @@ export function StoryReader({ story, vocabularyWords }: StoryReaderProps) {
       </div>
 
       {/* Sentences */}
-      <div className="space-y-6">
+      <div className="bg-white rounded-lg p-6 shadow-sm">
         {story.sentences.map((sentence) => (
-          <div
+          <HighlightableText
             key={sentence.id}
-            className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <HighlightableText
-              sentence={sentence.text}
-              sentenceId={sentence.id}
-              savedWords={savedWordsSet}
-              onWordClick={handleWordClick}
-            />
-          </div>
+            sentence={sentence.text}
+            sentenceId={sentence.id}
+            savedWords={savedWordsSet}
+            onWordClick={handleWordClick}
+          />
         ))}
       </div>
 
