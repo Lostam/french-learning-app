@@ -185,7 +185,7 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code block
 
       const client = getAnthropicClient();
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6-20250610',
         max_tokens: 2048,
         messages: [
           {
